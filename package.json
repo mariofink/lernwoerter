@@ -1,0 +1,10 @@
+{
+  "name": "lernwoerter",
+  "private": true,
+  "type": "module",
+  "description": "Lernwörter-Kiste: Lernwörter für die Grundschule üben",
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 8765"
+  }
+}

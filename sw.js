@@ -1,9 +1,32 @@
 // Offline-Unterstützung: App-Dateien und Schriften werden zwischengespeichert.
 // Bei Änderungen an der App VERSION erhöhen, damit Geräte die neue Fassung laden.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const APP_CACHE = 'lernwoerter-app-' + VERSION;
 const FONT_CACHE = 'lernwoerter-fonts';
-const APP_FILES = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
+// Jede Datei der App muss hier stehen, sonst fehlt sie offline.
+// tests/sw.test.js prüft das.
+const APP_FILES = [
+  './',
+  'index.html',
+  'manifest.webmanifest',
+  'css/tokens.css',
+  'css/base.css',
+  'css/components.css',
+  'js/main.js',
+  'js/model.js',
+  'js/store.js',
+  'js/picker.js',
+  'js/exchange.js',
+  'js/lineatur.js',
+  'js/ui.js',
+  'js/views/train.js',
+  'js/views/words.js',
+  'js/views/modals.js',
+  'icons/icon.svg',
+  'icons/icon-180.png',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(APP_CACHE).then(c => c.addAll(APP_FILES)).then(() => self.skipWaiting()));
