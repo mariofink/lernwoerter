@@ -96,22 +96,6 @@
 .result-list li:last-child {
   border-bottom: 0;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .sheet.enter {
-    animation: slide 0.28s ease-out;
-  }
-  @keyframes slide {
-    from {
-      transform: translateY(8px);
-      opacity: 0.3;
-    }
-    to {
-      transform: none;
-      opacity: 1;
-    }
-  }
-}
-
 /* Wörter-Ansicht */
 .add-row {
   display: grid;

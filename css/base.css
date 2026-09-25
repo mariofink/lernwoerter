@@ -278,3 +278,29 @@ nav.tabs button[aria-selected="true"] {
   z-index: 40;
   max-width: calc(100% - 32px);
 }
+
+/* Hilfsklassen für die Ansichten */
+.stack.tight {
+  gap: 8px;
+}
+.stack > .eyebrow {
+  margin: 0;
+}
+.row.split > * {
+  flex: 1;
+}
+.align-start {
+  align-self: flex-start;
+}
+.hint {
+  margin: 0 4px;
+}
+.script {
+  font-family: var(--script);
+}
+.plain {
+  margin: 0;
+}
+.stack > .eyebrow.hint {
+  margin: 0 4px;
+}

@@ -1,22 +1,24 @@
-// Einstieg: App-Zustand, Neuzeichnen und Verteilung der Benutzeraktionen.
+// Einstieg: App-Zustand, Aktionen und Neuzeichnen.
+//
+// Ablauf: Eine Aktion ändert `state` und ruft `update()` auf. `update()` rendert
+// die ganze App mit lit-html neu; lit-html ändert dabei nur, was sich wirklich
+// geändert hat.
 
-import { clean, createWord, parseWordInput, wordsInList } from "./model.js";
+import { render } from "./vendor/lit-html.js";
+import { clean, createWord, wordsInList } from "./model.js";
 import * as store from "./store.js";
 import { pickRound } from "./picker.js";
 import { applyImport, buildMessage, parseMessage } from "./exchange.js";
 import { drawLineatur } from "./lineatur.js";
 import {
   copyText,
-  focusSoon,
-  getValue,
+  focusById,
   keepAwake,
   plural,
-  setValue,
+  slideIn,
   toast,
 } from "./ui.js";
-import { renderTrain } from "./views/train.js";
-import { bulkToggleLabel, renderWords } from "./views/words.js";
-import { importPreview, renderModal } from "./views/modals.js";
+import { App } from "./views/app.js";
 
 const EXAMPLES = [
   "Hund",
@@ -40,370 +42,288 @@ const state = {
   filter: prefs.filter || "alle", // Liste für die Übungsrunde
   size: prefs.size || 5, // Wörter pro Runde
   hide: !!prefs.hide, // Wort erst verdecken
-  round: null, // {ids, idx, results:{id:'good'|'warn'}, revealed}
+  round: null, // { ids, idx, results: { id: "good" | "warn" }, revealed }
   search: "",
-  modal: null,
+  bulkOpen: false, // Feld für mehrere Wörter sichtbar
+  modal: null, // { type: "edit", id } | { type: "share" } | { type: "import", text, fromLink }
   confirm: false, // Rückfrage im Dialog sichtbar
   shareList: "alle",
-  lastList: "",
+  lastList: "", // zuletzt benutzte Liste beim Eintragen
   standalone:
     window.matchMedia("(display-mode: standalone)").matches ||
     navigator.standalone === true,
 };
 
-const appRoot = document.getElementById("app");
-const modalRoot = document.getElementById("modalRoot");
+const root = document.getElementById("root");
 
 // ---------- Zeichnen ----------
 
-function render() {
-  const n = state.words.length;
-  document.getElementById("count").textContent = n
-    ? plural(n, "Wort", "Wörter")
-    : "";
-  document
-    .getElementById("tabTrain")
-    .setAttribute("aria-selected", state.tab === "train");
-  document
-    .getElementById("tabWords")
-    .setAttribute("aria-selected", state.tab === "words");
-  if (state.tab === "train") renderTrain(appRoot, state);
-  else renderWords(appRoot, state);
+let cardWordId = null;
+
+function update() {
+  render(App(state, actions), root);
+  paintWordCard();
 }
 
-function openModal(modal) {
-  modalRoot.innerHTML = "";
-  state.modal = modal;
-  state.confirm = false;
-  renderModal(modalRoot, state);
-}
-
-function closeModal() {
-  state.modal = null;
-  state.confirm = false;
-  modalRoot.innerHTML = "";
+/** Die Wortkarte ist ein Canvas und wird nach dem Rendern bemalt. */
+function paintWordCard() {
+  const canvas = document.getElementById("lineatur");
+  if (!canvas) {
+    cardWordId = null;
+    return;
+  }
+  drawLineatur(canvas, canvas.getAttribute("aria-label"));
+  const id = state.round?.ids[state.round.idx];
+  if (id !== cardWordId) slideIn(canvas.closest(".sheet"));
+  cardWordId = id;
 }
 
 // ---------- Daten ändern ----------
 
-function commit(words = state.words) {
+function saveWords(words) {
   state.words = words;
   if (!store.saveWords(words))
     toast("Speichern hat nicht geklappt. Ist privates Surfen aktiv?");
-  render();
+  update();
 }
 
 function savePrefs() {
   store.savePrefs({ size: state.size, filter: state.filter, hide: state.hide });
 }
 
-function addWords(texts, list) {
-  const existing = new Set(state.words.map((w) => w.text));
-  const fresh = [...new Set(texts)].filter((t) => !existing.has(t));
-  if (fresh.length) {
-    commit([...state.words, ...fresh.map((t) => createWord(t, list))]);
-    toast(
-      fresh.length === 1
-        ? `„${fresh[0]}“ hinzugefügt`
-        : `${fresh.length} Wörter hinzugefügt`,
-    );
-  } else if (texts.length) {
-    toast("Steht schon in der Kiste");
-  }
-  return fresh.length;
-}
-
 function updateWord(id, patch) {
-  commit(state.words.map((w) => (w.id === id ? { ...w, ...patch } : w)));
+  saveWords(state.words.map((w) => (w.id === id ? { ...w, ...patch } : w)));
 }
 
-const currentWord = () => state.words.find((w) => w.id === state.modal?.id);
-const sharedWords = () => wordsInList(state.words, state.shareList);
-const appUrl = () => location.origin + location.pathname;
+function openModal(modal) {
+  state.modal = modal;
+  state.confirm = false;
+  update();
+}
 
-// ---------- Aktionen (data-act="…") ----------
+const appUrl = () => location.origin + location.pathname;
+const shareMessage = () =>
+  buildMessage(wordsInList(state.words, state.shareList), appUrl());
+
+// ---------- Aktionen ----------
+// Die Ansichten rufen nur diese Funktionen auf und ändern `state` nie selbst.
 
 const actions = {
-  goWords() {
-    state.tab = "words";
-    render();
-    focusSoon("newWord");
+  // Navigation
+  setTab(tab) {
+    state.tab = tab;
+    update();
+    window.scrollTo(0, 0);
   },
-  examples() {
-    addWords(EXAMPLES, "Beispiel");
+  goToWords() {
+    actions.setTab("words");
+    focusById("newWord");
+  },
+
+  // Wörter eintragen
+  /** Fügt neue Wörter hinzu und gibt zurück, wie viele wirklich neu waren. */
+  addWords(texts, list) {
+    list = clean(list);
+    state.lastList = list;
+    const existing = new Set(state.words.map((w) => w.text));
+    const fresh = [...new Set(texts)].filter((t) => !existing.has(t));
+    if (fresh.length) {
+      saveWords([...state.words, ...fresh.map((t) => createWord(t, list))]);
+      toast(
+        fresh.length === 1
+          ? `„${fresh[0]}“ hinzugefügt`
+          : `${fresh.length} Wörter hinzugefügt`,
+      );
+    } else if (texts.length) {
+      toast("Steht schon in der Kiste");
+    }
+    return fresh.length;
+  },
+  addExamples() {
+    actions.addWords(EXAMPLES, "Beispiel");
+  },
+  toggleBulk() {
+    state.bulkOpen = !state.bulkOpen;
+    update();
+  },
+  setSearch(q) {
+    state.search = q;
+    update();
   },
 
   // Üben
-  start() {
+  setFilter(list) {
+    state.filter = list;
+    savePrefs();
+    update();
+  },
+  setSize(n) {
+    state.size = n;
+    savePrefs();
+    update();
+  },
+  startRound() {
     const ids = pickRound(wordsInList(state.words, state.filter), state.size);
-    if (!ids.length) {
-      toast("In dieser Auswahl sind keine Wörter.");
-      return;
-    }
+    if (!ids.length) return toast("In dieser Auswahl sind keine Wörter.");
     state.round = { ids, idx: 0, results: {}, revealed: false };
     keepAwake(true);
-    render();
+    update();
     window.scrollTo(0, 0);
   },
-  stop() {
+  stopRound() {
     state.round = null;
     keepAwake(false);
-    render();
+    update();
   },
   reveal() {
     state.round.revealed = true;
-    render();
+    update();
   },
   toggleHide() {
     state.hide = !state.hide;
     savePrefs();
-    render();
+    update();
   },
   skip() {
     state.round.idx++;
     state.round.revealed = false;
-    render();
+    update();
   },
-  mark(el) {
-    const round = state.round,
-      id = round.ids[round.idx],
-      res = el.dataset.res;
-    round.results[id] = res;
+  mark(result) {
+    const round = state.round;
+    const id = round.ids[round.idx];
+    round.results[id] = result;
     round.idx++;
     round.revealed = false;
     if (round.idx >= round.ids.length) keepAwake(false);
     const w = state.words.find((x) => x.id === id);
-    if (w)
-      updateWord(id, {
-        right: (w.right || 0) + (res === "good" ? 1 : 0),
-        wrong: (w.wrong || 0) + (res === "warn" ? 1 : 0),
-        lastAt: Date.now(),
-      });
-    else render();
+    updateWord(id, {
+      right: (w.right || 0) + (result === "good" ? 1 : 0),
+      wrong: (w.wrong || 0) + (result === "warn" ? 1 : 0),
+      lastAt: Date.now(),
+    });
   },
 
-  // Wörter eintragen
-  toggleBulk(el) {
-    const box = document.getElementById("bulkBox");
-    box.hidden = !box.hidden;
-    el.textContent = bulkToggleLabel(!box.hidden);
-    if (!box.hidden) document.getElementById("bulk").focus();
-  },
-  bulkAdd() {
-    const list = clean(getValue("newList"));
-    state.lastList = list;
-    if (addWords(parseWordInput(getValue("bulk")), list)) setValue("bulk", "");
-  },
-
-  // Wort bearbeiten
-  saveEdit() {
-    const w = currentWord();
-    if (!w) return;
-    const text = clean(getValue("editText")),
-      list = clean(getValue("editList"));
-    if (!text) {
-      toast("Das Wort darf nicht leer sein.");
-      return;
-    }
-    if (text !== w.text && state.words.some((x) => x.text === text)) {
-      toast("Dieses Wort gibt es schon.");
-      return;
-    }
-    closeModal();
-    updateWord(w.id, { text, list });
-    toast("Gespeichert");
-  },
-  resetStats() {
-    const w = currentWord();
-    if (!w) return;
-    updateWord(w.id, { right: 0, wrong: 0, lastAt: 0 });
-    renderModal(modalRoot, state);
-    toast("Zähler zurückgesetzt");
-  },
-  doDelete() {
-    const w = currentWord();
-    closeModal();
-    if (!w) return;
-    commit(state.words.filter((x) => x.id !== w.id));
-    toast(`„${w.text}“ gelöscht`);
+  // Dialoge allgemein
+  closeModal() {
+    state.modal = null;
+    state.confirm = false;
+    update();
   },
   askConfirm() {
     state.confirm = true;
-    renderModal(modalRoot, state);
+    update();
   },
   cancelConfirm() {
     state.confirm = false;
-    renderModal(modalRoot, state);
+    update();
   },
-  closeModal,
 
-  // Teilen
+  // Wort bearbeiten
+  openEdit(id) {
+    openModal({ type: "edit", id });
+    focusById("editText");
+  },
+  saveEdit(id, text, list) {
+    text = clean(text);
+    const word = state.words.find((w) => w.id === id);
+    if (!text) return toast("Das Wort darf nicht leer sein.");
+    if (text !== word.text && state.words.some((w) => w.text === text))
+      return toast("Dieses Wort gibt es schon.");
+    state.modal = null;
+    updateWord(id, { text, list: clean(list) });
+    toast("Gespeichert");
+  },
+  resetStats(id) {
+    updateWord(id, { right: 0, wrong: 0, lastAt: 0 });
+    toast("Zähler zurückgesetzt");
+  },
+  deleteWord(id) {
+    const word = state.words.find((w) => w.id === id);
+    state.modal = null;
+    state.confirm = false;
+    const pos = state.round?.ids.indexOf(id) ?? -1;
+    if (pos >= 0) {
+      state.round.ids.splice(pos, 1);
+      if (pos < state.round.idx) state.round.idx--;
+    }
+    saveWords(state.words.filter((w) => w.id !== id));
+    toast(`„${word.text}“ gelöscht`);
+  },
+
+  // Liste teilen
   openShare() {
     openModal({ type: "share" });
   },
-  async doShare() {
-    const text = buildMessage(sharedWords(), appUrl());
-    if (navigator.share) {
-      try {
-        await navigator.share({ text });
-        closeModal();
-      } catch (err) {
-        if (err?.name !== "AbortError" && (await copyText(text)))
-          toast("Teilen ging nicht. Text ist kopiert.");
-      }
-    } else if (await copyText(text)) {
-      toast("Kopiert. Jetzt in eine Nachricht einfügen.");
-      closeModal();
-    } else {
-      toast("Kopieren hat nicht geklappt.");
+  setShareList(list) {
+    state.shareList = list;
+    update();
+  },
+  async share() {
+    const text = shareMessage();
+    if (!navigator.share) return actions.copyShare();
+    try {
+      await navigator.share({ text });
+      actions.closeModal();
+    } catch (err) {
+      if (err?.name !== "AbortError" && (await copyText(text)))
+        toast("Teilen ging nicht. Text ist kopiert.");
     }
   },
-  async doCopy() {
-    if (await copyText(buildMessage(sharedWords(), appUrl()))) {
-      toast("Kopiert. Jetzt in eine Nachricht einfügen.");
-      closeModal();
-    } else {
-      toast("Kopieren hat nicht geklappt.");
-    }
+  async copyShare() {
+    if (!(await copyText(shareMessage())))
+      return toast("Kopieren hat nicht geklappt.");
+    toast("Kopiert. Jetzt in eine Nachricht einfügen.");
+    actions.closeModal();
   },
 
-  // Empfangen
+  // Liste empfangen
   openImport() {
     openModal({ type: "import", text: "" });
-    focusSoon("importText");
+    focusById("importText");
+  },
+  setImportText(text) {
+    state.modal.text = text;
+    update();
   },
   async pasteClipboard() {
     try {
       const text = await navigator.clipboard.readText();
-      state.modal.text = text;
-      renderModal(modalRoot, state);
+      actions.setImportText(text);
       if (!text.trim()) toast("Die Zwischenablage ist leer.");
     } catch {
       toast("Bitte lange ins Feld tippen und „Einsetzen“ wählen.");
-      document.getElementById("importText")?.focus();
+      focusById("importText");
     }
   },
   async copyIncoming() {
+    const ok = await copyText(state.modal.text);
     toast(
-      (await copyText(state.modal.text))
-        ? "Kopiert. Jetzt die App öffnen."
-        : "Kopieren hat nicht geklappt.",
+      ok ? "Kopiert. Jetzt die App öffnen." : "Kopieren hat nicht geklappt.",
     );
   },
-  doImportMerge() {
-    importWords("merge");
-  },
-  doImportReplace() {
-    importWords("replace");
+  importWords(mode) {
+    const { words, count } = applyImport(
+      state.words,
+      parseMessage(state.modal.text),
+      mode,
+    );
+    state.modal = null;
+    state.confirm = false;
+    state.tab = "words";
+    saveWords(words);
+    if (mode === "replace")
+      toast(`Liste ersetzt: ${plural(count, "Wort", "Wörter")}`);
+    else if (count)
+      toast(`${count} neue ${count === 1 ? "Wort" : "Wörter"} übernommen`);
+    else toast("Alle Wörter waren schon da");
   },
 };
 
-function importWords(mode) {
-  const { words, count } = applyImport(
-    state.words,
-    parseMessage(state.modal.text),
-    mode,
-  );
-  closeModal();
-  state.tab = "words";
-  commit(words);
-  if (mode === "replace")
-    toast(`Liste ersetzt: ${plural(count, "Wort", "Wörter")}`);
-  else
-    toast(
-      count
-        ? `${count} neue ${count === 1 ? "Wort" : "Wörter"} übernommen`
-        : "Alle Wörter waren schon da",
-    );
-}
-
-// ---------- Ereignisse ----------
-
-document.addEventListener("click", (e) => {
-  const t = e.target;
-  const tab = t.closest("[data-tab]");
-  if (tab) {
-    state.tab = tab.dataset.tab;
-    render();
-    window.scrollTo(0, 0);
-    return;
-  }
-
-  const filter = t.closest("[data-filter]");
-  if (filter) {
-    state.filter = filter.dataset.filter;
-    savePrefs();
-    render();
-    return;
-  }
-
-  const size = t.closest("[data-size]");
-  if (size) {
-    state.size = Number(size.dataset.size);
-    savePrefs();
-    render();
-    return;
-  }
-
-  const shareList = t.closest("[data-sharelist]");
-  if (shareList) {
-    state.shareList = shareList.dataset.sharelist;
-    renderModal(modalRoot, state);
-    return;
-  }
-
-  const edit = t.closest("[data-edit]");
-  if (edit) {
-    openModal({ type: "edit", id: edit.dataset.edit });
-    return;
-  }
-
-  const el = t.closest("[data-act]");
-  if (!el) return;
-  // Der Hintergrund schließt den Dialog nur bei einem Tipp direkt auf ihn
-  if (el.classList.contains("backdrop") && t !== el) return;
-  actions[el.dataset.act]?.(el);
-});
-
-document.addEventListener("submit", (e) => {
-  if (e.target.id !== "addForm") return;
-  e.preventDefault();
-  const input = document.getElementById("newWord");
-  const list = clean(getValue("newList"));
-  state.lastList = list;
-  const texts = parseWordInput(input.value);
-  if (!texts.length) {
-    input.focus();
-    return;
-  }
-  input.value = "";
-  addWords(texts, list);
-  document.getElementById("newWord")?.focus();
-});
-
-let searchTimer;
-document.addEventListener("input", (e) => {
-  if (e.target.id === "search") {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => {
-      state.search = e.target.value;
-      render();
-    }, 120);
-  }
-  if (e.target.id === "importText" && state.modal) {
-    state.modal.text = e.target.value;
-    document.getElementById("importPreview").innerHTML = importPreview(
-      state.modal.text,
-      state.words,
-    );
-    document.getElementById("importActions").hidden = !parseMessage(
-      state.modal.text,
-    ).length;
-  }
-});
+// ---------- Ereignisse außerhalb der Ansichten ----------
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && state.modal) closeModal();
+  if (e.key === "Escape" && state.modal) actions.closeModal();
 });
 
 document.addEventListener("visibilitychange", () => {
@@ -412,18 +332,14 @@ document.addEventListener("visibilitychange", () => {
     keepAwake(true);
 });
 
-// Wortkarte bei Größen- oder Farbwechsel neu zeichnen
-function redrawCard() {
-  const canvas = document.getElementById("lineatur");
-  if (canvas) drawLineatur(canvas, canvas.getAttribute("aria-label"));
-}
-window.addEventListener("resize", redrawCard);
+// Wortkarte bei Größen- oder Farbwechsel und nach dem Laden der Schrift neu zeichnen
+window.addEventListener("resize", paintWordCard);
 window
   .matchMedia("(prefers-color-scheme: dark)")
-  .addEventListener?.("change", redrawCard);
+  .addEventListener?.("change", paintWordCard);
 document.fonts
   ?.load('400 40px "Andika"')
-  .then(redrawCard)
+  .then(paintWordCard)
   .catch(() => {});
 
 // Geöffneter Teilen-Link (#import=…)
@@ -439,7 +355,7 @@ window.addEventListener("hashchange", checkIncomingLink);
 // ---------- Start ----------
 
 store.requestPersistence();
-render();
+update();
 checkIncomingLink();
 
 if ("serviceWorker" in navigator && location.protocol === "https:") {

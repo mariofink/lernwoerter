@@ -1,25 +1,9 @@
-// Kleine Helfer für die Oberfläche.
-
-export const esc = (s) =>
-  String(s).replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
-  );
+// Kleine Helfer rund um den Browser, unabhängig von den Ansichten.
 
 export const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-export const getValue = (id) => document.getElementById(id)?.value ?? null;
-
-export function setValue(id, value) {
-  const el = document.getElementById(id);
-  if (el && value != null) el.value = value;
-}
-
-export function focusSoon(id) {
-  setTimeout(() => document.getElementById(id)?.focus(), 60);
+export function focusById(id) {
+  document.getElementById(id)?.focus();
 }
 
 let toastTimer;
@@ -79,13 +63,15 @@ export async function keepAwake(on) {
   }
 }
 
-const svg = (path) =>
-  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
-export const ICONS = {
-  share: svg(
-    '<path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>',
-  ),
-  receive: svg(
-    '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/>',
-  ),
-};
+/** Lässt ein Element kurz einschweben, außer bei „Bewegung reduzieren“. */
+export function slideIn(el) {
+  if (!el?.animate || matchMedia("(prefers-reduced-motion: reduce)").matches)
+    return;
+  el.animate(
+    [
+      { transform: "translateY(8px)", opacity: 0.3 },
+      { transform: "none", opacity: 1 },
+    ],
+    { duration: 280, easing: "ease-out" },
+  );
+}
