@@ -9,7 +9,7 @@ import { clean, createWord, wordsInList } from "./model.js";
 import * as store from "./store.js";
 import { pickRound } from "./picker.js";
 import { applyImport, buildMessage, parseMessage } from "./exchange.js";
-import { drawLineatur } from "./lineatur.js";
+import { LINEATUR_FONT, drawLineatur } from "./lineatur.js";
 import {
   copyText,
   focusById,
@@ -346,7 +346,7 @@ window
   .matchMedia("(prefers-color-scheme: dark)")
   .addEventListener?.("change", paintWordCard);
 document.fonts
-  ?.load('400 40px "Andika"')
+  ?.load(`400 40px "${LINEATUR_FONT}"`)
   .then(paintWordCard)
   .catch(() => {});
 

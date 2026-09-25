@@ -1,7 +1,7 @@
 // Offline-Unterstützung: App-Dateien und Schriften werden zwischengespeichert.
 // Bei Änderungen an der App VERSION erhöhen, damit Geräte die neue Fassung laden.
 // Die App zeigt diese VERSION unter „Wörter“ an (js/sw-client.js fragt sie ab).
-const VERSION = "v4";
+const VERSION = "v5";
 const APP_CACHE = "lernwoerter-app-" + VERSION;
 const FONT_CACHE = "lernwoerter-fonts";
 // Jede Datei der App muss hier stehen, sonst fehlt sie offline.

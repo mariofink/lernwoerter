@@ -1,8 +1,12 @@
 // Zeichnet ein Wort auf Grundschul-Lineatur:
 // Oberlinie, Mittelband (schattiert), Grundlinie (rot), Unterlinie.
 // Die Linien richten sich nach den echten Maßen der Schrift.
+//
+// Das Wort steht in Schulausgangsschrift (Playwrite DE SAS von Google Fonts),
+// so wie die Kinder es in der Grundschule schreiben lernen.
 
-const FONT = '"Andika", "Figtree", sans-serif';
+export const LINEATUR_FONT = "Playwrite DE SAS";
+const FONT = `"${LINEATUR_FONT}", "Andika", cursive`;
 const MAX_SIZE = 84,
   MIN_SIZE = 22,
   PAD = 14;
