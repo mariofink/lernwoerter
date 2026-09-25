@@ -1,6 +1,7 @@
 // Offline-Unterstützung: App-Dateien und Schriften werden zwischengespeichert.
 // Bei Änderungen an der App VERSION erhöhen, damit Geräte die neue Fassung laden.
-const VERSION = "v3";
+// Die App zeigt diese VERSION unter „Wörter“ an (js/sw-client.js fragt sie ab).
+const VERSION = "v4";
 const APP_CACHE = "lernwoerter-app-" + VERSION;
 const FONT_CACHE = "lernwoerter-fonts";
 // Jede Datei der App muss hier stehen, sonst fehlt sie offline.
@@ -13,6 +14,7 @@ const APP_FILES = [
   "css/base.css",
   "css/components.css",
   "js/main.js",
+  "js/sw-client.js",
   "js/components.js",
   "js/model.js",
   "js/store.js",
@@ -53,6 +55,11 @@ self.addEventListener("activate", (e) => {
       )
       .then(() => self.clients.claim()),
   );
+});
+
+// Die App fragt nach der Version, die gerade auf dem Gerät läuft.
+self.addEventListener("message", (e) => {
+  if (e.data?.type === "version") e.ports[0]?.postMessage({ version: VERSION });
 });
 
 self.addEventListener("fetch", (e) => {

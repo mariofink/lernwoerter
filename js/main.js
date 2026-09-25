@@ -19,6 +19,7 @@ import {
   toast,
 } from "./ui.js";
 import { App } from "./views/app.js";
+import { connectServiceWorker } from "./sw-client.js";
 
 const EXAMPLES = [
   "Hund",
@@ -49,6 +50,8 @@ const state = {
   confirm: false, // Rückfrage im Dialog sichtbar
   shareList: "alle",
   lastList: "", // zuletzt benutzte Liste beim Eintragen
+  appVersion: null, // Version des laufenden Service Workers, null solange unbekannt
+  updateReady: false, // neue Version aktiv, Seite muss neu geladen werden
   standalone:
     window.matchMedia("(display-mode: standalone)").matches ||
     navigator.standalone === true,
@@ -109,6 +112,11 @@ const shareMessage = () =>
 // Die Ansichten rufen nur diese Funktionen auf und ändern `state` nie selbst.
 
 const actions = {
+  // App
+  reloadApp() {
+    location.reload();
+  },
+
   // Navigation
   setTab(tab) {
     state.tab = tab;
@@ -358,6 +366,13 @@ store.requestPersistence();
 update();
 checkIncomingLink();
 
-if ("serviceWorker" in navigator && location.protocol === "https:") {
-  navigator.serviceWorker.register("sw.js").catch(() => {});
-}
+connectServiceWorker({
+  onVersion(version) {
+    state.appVersion = version;
+    update();
+  },
+  onUpdate() {
+    state.updateReady = true;
+    update();
+  },
+});
