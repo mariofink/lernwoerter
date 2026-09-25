@@ -39,49 +39,7 @@
     <link rel="stylesheet" href="css/components.css" />
   </head>
   <body>
-    <div class="wrap">
-      <header class="top">
-        <h1>Lernwörter-Kiste</h1>
-        <span class="count" id="count"></span>
-      </header>
-      <main id="app" aria-live="polite"></main>
-    </div>
-
-    <nav class="tabs" role="tablist">
-      <button id="tabTrain" role="tab" aria-selected="true" data-tab="train">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" />
-          <path d="M14 6l3 3" />
-        </svg>
-        Üben
-      </button>
-      <button id="tabWords" role="tab" aria-selected="false" data-tab="words">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z" />
-          <path d="M9 9h6M9 13h6" />
-        </svg>
-        Wörter
-      </button>
-    </nav>
-
-    <div id="modalRoot"></div>
-
+    <div id="root"></div>
     <script type="module" src="js/main.js"></script>
   </body>
 </html>

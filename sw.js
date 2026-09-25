@@ -1,6 +1,6 @@
 // Offline-Unterstützung: App-Dateien und Schriften werden zwischengespeichert.
 // Bei Änderungen an der App VERSION erhöhen, damit Geräte die neue Fassung laden.
-const VERSION = "v2";
+const VERSION = "v3";
 const APP_CACHE = "lernwoerter-app-" + VERSION;
 const FONT_CACHE = "lernwoerter-fonts";
 // Jede Datei der App muss hier stehen, sonst fehlt sie offline.
@@ -13,15 +13,18 @@ const APP_FILES = [
   "css/base.css",
   "css/components.css",
   "js/main.js",
+  "js/components.js",
   "js/model.js",
   "js/store.js",
   "js/picker.js",
   "js/exchange.js",
   "js/lineatur.js",
   "js/ui.js",
+  "js/views/app.js",
   "js/views/train.js",
   "js/views/words.js",
   "js/views/modals.js",
+  "js/vendor/lit-html.js",
   "icons/icon.svg",
   "icons/icon-180.png",
   "icons/icon-192.png",

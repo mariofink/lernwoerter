@@ -15,6 +15,9 @@ Live: https://mariofink.github.io/lernwoerter/
 
 Kein Build-Schritt: der Browser lädt die ES-Module direkt, GitHub Pages liefert den Ordner aus, wie er ist.
 
+Die Ansichten sind Funktionen `(state, actions) => html\`…\``. Eine Aktion in `main.js`ändert den Zustand und ruft`update()` auf,
+lit-html aktualisiert dann nur die geänderten Stellen im DOM. Die Ansichten ändern den Zustand nie selbst.
+
 | Datei                | Aufgabe                                    |
 | -------------------- | ------------------------------------------ |
 | `index.html`         | Gerüst der Seite                           |
