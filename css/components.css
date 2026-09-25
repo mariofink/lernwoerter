@@ -198,3 +198,22 @@
 .preview.bad {
   color: var(--danger);
 }
+
+/* App-Version und Update-Hinweis */
+.app-info {
+  text-align: center;
+  padding-block: 8px;
+}
+.notice.update {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.notice.update .btn {
+  min-height: 40px;
+  padding: 8px 14px;
+  font-size: 15px;
+  flex-shrink: 0;
+}

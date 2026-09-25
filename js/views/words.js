@@ -35,6 +35,7 @@ export function WordsView(state, actions) {
         hasWords && !shown.length,
         () => html`<p class="muted">Kein Wort passt zu „${state.search}“.</p>`,
       )}
+      ${AppInfo(state.appVersion)}
     </div>
   `;
 }
@@ -180,3 +181,9 @@ function WordGroup(name, words, actions) {
     </section>
   `;
 }
+
+const AppInfo = (version) => html`
+  <footer class="app-info muted small">
+    Lernwörter-Kiste · Version ${version ?? "…"}
+  </footer>
+`;

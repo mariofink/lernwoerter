@@ -46,3 +46,23 @@ test("Alle in index.html eingebundenen lokalen Dateien stehen in APP_FILES", () 
   for (const ref of refs)
     assert.ok(listed.includes(ref), `${ref} fehlt in sw.js APP_FILES`);
 });
+
+test("Der Service Worker nennt auf Anfrage seine Version", async () => {
+  // sw.js in einer Attrappe der Service-Worker-Umgebung ausführen
+  const { runInNewContext } = await import("node:vm");
+  const handlers = {};
+  const self = {
+    addEventListener: (type, fn) => (handlers[type] = fn),
+    skipWaiting: () => {},
+    clients: { claim: () => {} },
+  };
+  runInNewContext(sw, { self, location: { origin: "https://example.org" } });
+
+  const version = sw.match(/const VERSION = ["']([^"']+)["']/)[1];
+  let answer;
+  handlers.message({
+    data: { type: "version" },
+    ports: [{ postMessage: (msg) => (answer = msg) }],
+  });
+  assert.equal(answer?.version, version);
+});

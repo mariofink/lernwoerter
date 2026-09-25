@@ -1,7 +1,7 @@
 // Grundgerüst: Kopfzeile, aktuelle Ansicht, Tab-Leiste, offener Dialog.
 
 import { html } from "../vendor/lit-html.js";
-import { Icons } from "../components.js";
+import { Icons, when } from "../components.js";
 import { plural } from "../ui.js";
 import { TrainView } from "./train.js";
 import { WordsView } from "./words.js";
@@ -22,6 +22,7 @@ export function App(state, actions) {
           >${count ? plural(count, "Wort", "Wörter") : ""}</span
         >
       </header>
+      ${when(state.updateReady, () => UpdateNotice(actions))}
       <main aria-live="polite">
         ${state.tab === "train" ? TrainView(state, actions) : WordsView(state, actions)}
       </main>
@@ -44,4 +45,11 @@ const TabBar = (current, onSelect) => html`
       `,
     )}
   </nav>
+`;
+
+const UpdateNotice = (actions) => html`
+  <div class="notice update">
+    <span>Eine neue Version der Lernwörter-Kiste ist da.</span>
+    <button class="btn primary" @click=${actions.reloadApp}>Neu laden</button>
+  </div>
 `;

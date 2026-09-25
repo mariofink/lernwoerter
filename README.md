@@ -47,6 +47,7 @@ Die Tests laufen bei jedem Push auch als GitHub Action.
 
 1. Neue Dateien in `sw.js` unter `APP_FILES` eintragen (die Tests prüfen das).
 2. In `sw.js` die `VERSION` erhöhen, sonst laden installierte Apps die neue Fassung nicht.
+   Die App zeigt diese Version unten im Tab „Wörter“ an; eine geöffnete App meldet das Update mit „Neu laden“.
 3. Committen und auf `main` pushen. GitHub Pages ist nach etwa einer Minute aktuell.
 
 Das Nachrichtenformat in `js/exchange.js` nur abwärtskompatibel ändern: bereits verschickte Nachrichten müssen lesbar bleiben.
