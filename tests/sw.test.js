@@ -8,7 +8,7 @@ import { join, relative } from "node:path";
 const ROOT = new URL("..", import.meta.url).pathname;
 const sw = readFileSync(join(ROOT, "sw.js"), "utf8");
 const listed = [
-  ...sw.match(/const APP_FILES = \[([\s\S]*?)\];/)[1].matchAll(/'([^']+)'/g),
+  ...sw.match(/const APP_FILES = \[([\s\S]*?)\];/)[1].matchAll(/["']([^"']+)["']/g),
 ].map((m) => m[1]);
 
 function filesIn(dir) {
