@@ -15,21 +15,21 @@ Live: https://mariofink.github.io/lernwoerter/
 
 Kein Build-Schritt: der Browser lädt die ES-Module direkt, GitHub Pages liefert den Ordner aus, wie er ist.
 
-| Datei | Aufgabe |
-|---|---|
-| `index.html` | Gerüst der Seite |
-| `css/tokens.css` | Farben, Schriften, Dunkelmodus |
-| `css/base.css` | Grundlayout, Tabs, Buttons, Felder |
-| `css/components.css` | Übungskarte, Wortliste, Dialoge |
-| `js/main.js` | App-Zustand, Aktionen, Start |
-| `js/model.js` | Lernwort-Objekt, Listen-Helfer |
-| `js/store.js` | Speichern auf dem Gerät |
-| `js/picker.js` | Gewichtete Zufallsauswahl |
-| `js/exchange.js` | Nachrichtenformat zum Teilen und Empfangen |
-| `js/lineatur.js` | Wort auf Grundschul-Linien zeichnen |
-| `js/ui.js` | Toast, Kopieren, kleine Helfer |
-| `js/views/*.js` | Ansichten: Üben, Wörter, Dialoge |
-| `sw.js` | Offline-Unterstützung (Service Worker) |
+| Datei                | Aufgabe                                    |
+| -------------------- | ------------------------------------------ |
+| `index.html`         | Gerüst der Seite                           |
+| `css/tokens.css`     | Farben, Schriften, Dunkelmodus             |
+| `css/base.css`       | Grundlayout, Tabs, Buttons, Felder         |
+| `css/components.css` | Übungskarte, Wortliste, Dialoge            |
+| `js/main.js`         | App-Zustand, Aktionen, Start               |
+| `js/model.js`        | Lernwort-Objekt, Listen-Helfer             |
+| `js/store.js`        | Speichern auf dem Gerät                    |
+| `js/picker.js`       | Gewichtete Zufallsauswahl                  |
+| `js/exchange.js`     | Nachrichtenformat zum Teilen und Empfangen |
+| `js/lineatur.js`     | Wort auf Grundschul-Linien zeichnen        |
+| `js/ui.js`           | Toast, Kopieren, kleine Helfer             |
+| `js/views/*.js`      | Ansichten: Üben, Wörter, Dialoge           |
+| `sw.js`              | Offline-Unterstützung (Service Worker)     |
 
 ## Entwickeln
 
