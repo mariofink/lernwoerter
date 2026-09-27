@@ -2,7 +2,7 @@
 // Oberlinie, Mittelband (schattiert), Grundlinie (rot), Unterlinie.
 // Die Linien richten sich nach den echten Maßen der Schrift.
 
-export const LINEATUR_FONT = "Playwrite DE VA";
+export const LINEATUR_FONT = "Playwrite DE SAS";
 const FONT = `"${LINEATUR_FONT}", cursive`;
 const MAX_SIZE = 84,
   MIN_SIZE = 22,
